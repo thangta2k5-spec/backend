@@ -21,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.tathang.example304.security.jwt.AuthEntryPointJwt;
 import com.tathang.example304.security.jwt.AuthTokenFilter;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -38,18 +39,22 @@ public class SecurityConfig {
         return new AuthTokenFilter();
     }
 
-    // ✅ Cấu hình CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:3000"); // React app
-        configuration.addAllowedOrigin("http://localhost:8080"); // Backend
-        configuration.addAllowedMethod("*"); // Cho phép mọi method
-        configuration.addAllowedHeader("*"); // Cho phép mọi header
-        configuration.setAllowCredentials(true); // Cho phép gửi cookie/token
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://localhost:8081",
+                "http://127.0.0.1:8081",
+                "http://192.168.1.19:8081"));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 

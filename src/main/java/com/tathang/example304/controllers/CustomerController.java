@@ -69,6 +69,12 @@ public class CustomerController {
         }
     }
 
+    @GetMapping("/products/by-category/{categoryId}")
+    public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable Long categoryId) {
+        List<Product> products = productService.getProductsByCategory(categoryId);
+        return ResponseEntity.ok(products);
+    }
+
     // === ORDER MANAGEMENT ===
 
     /**

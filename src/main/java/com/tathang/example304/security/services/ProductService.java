@@ -135,4 +135,5 @@ public class ProductService {
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
+
 }
