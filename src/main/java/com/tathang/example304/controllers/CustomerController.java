@@ -196,28 +196,23 @@ public class CustomerController {
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
         try {
-            System.out.println("📋 Getting order details: " + orderId);
-
-            // Kiểm tra order thuộc về user
             Order order = orderService.getOrderById(orderId);
-            if (order == null || !order.getUser().getId().equals(userDetails.getId())) {
-                return ResponseEntity.status(403).body("Order not found or access denied");
+
+            if (!order.getUser().getId().equals(userDetails.getId())) {
+                return ResponseEntity.status(403).body("Access denied");
             }
 
-            // Lấy order items
             List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(orderId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("order", order);
-            response.put("items", orderItems);
-            response.put("totalItems", orderItems.size());
-            response.put("totalAmount", order.getTotalAmount());
+            return ResponseEntity.ok(Map.of(
+                    "order", order,
+                    "items", orderItems,
+                    "totalItems", orderItems.size(),
+                    "totalAmount", order.getTotalAmount()));
 
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            System.out.println("❌ Error getting order details: " + e.getMessage());
-            return ResponseEntity.badRequest().body("Failed to get order details");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
         }
     }
 
@@ -407,17 +402,27 @@ public class CustomerController {
 
         if ("PAYOS".equalsIgnoreCase(paymentRequest.getPaymentMethod())) {
 
-            // ❌ KHÔNG set PENDING ở đây
-            // ❌ KHÔNG tạo bill ở đây
+            // 1️⃣ TẠO BILL PENDING TRƯỚC
+            Bill bill = billService.createBill(orderId, Bill.PaymentMethod.PAYOS);
 
+            // 2️⃣ SET ORDER PENDING
+            order.setStatus(OrderStatus.PENDING);
+            orderRepository.save(order);
+
+            // 3️⃣ TẠO LINK PAYOS
             String checkoutUrl = payOSService.createPaymentLink(
                     orderId,
                     order.getTotalAmount());
+
+            // 4️⃣ LƯU orderCode + url
+            bill.setCheckoutUrl(checkoutUrl);
+            billRepository.save(bill);
 
             return ResponseEntity.ok(Map.of(
                     "paymentMethod", "PAYOS",
                     "checkoutUrl", checkoutUrl));
         }
+
         // CASH / MOMO
         Bill bill = billService.createBill(
                 orderId,
