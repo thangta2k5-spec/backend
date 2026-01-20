@@ -90,7 +90,7 @@ public class ProductService {
         product.setPrice(price);
         product.setCategory(category);
         product.setStockQuantity(stockQuantity);
-        if (imageUrl != null) {
+        if (imageUrl != null && imageUrl.startsWith("http")) {
             product.setImageUrl(imageUrl);
         }
 
