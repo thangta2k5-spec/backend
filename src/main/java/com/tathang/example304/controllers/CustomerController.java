@@ -195,25 +195,25 @@ public class CustomerController {
             @PathVariable Long orderId,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-        try {
-            Order order = orderService.getOrderById(orderId);
+        Order order = orderService.getOrderById(orderId);
 
-            if (!order.getUser().getId().equals(userDetails.getId())) {
-                return ResponseEntity.status(403).body("Access denied");
-            }
-
-            List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(orderId);
-
-            return ResponseEntity.ok(Map.of(
-                    "order", order,
-                    "items", orderItems,
-                    "totalItems", orderItems.size(),
-                    "totalAmount", order.getTotalAmount()));
-
-        } catch (RuntimeException e) {
+        if (order == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(e.getMessage());
+                    .body("Order not found");
         }
+
+        if (!order.getUser().getId().equals(userDetails.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied");
+        }
+
+        List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(orderId);
+
+        return ResponseEntity.ok(Map.of(
+                "order", order,
+                "items", orderItems,
+                "totalItems", orderItems.size(),
+                "totalAmount", order.getTotalAmount()));
     }
 
     /**
@@ -564,7 +564,6 @@ public class CustomerController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    // DTO for order item request (giữ nguyên)
     public static class OrderItemRequest {
         private Long productId;
         private Integer quantity;
